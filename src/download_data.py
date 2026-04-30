@@ -6,6 +6,7 @@ Download all raw data for the Citi Bike demand prediction project:
 """
 
 import os
+import glob
 import time
 import zipfile
 import requests
@@ -55,10 +56,36 @@ def _download_zip(name: str) -> None:
     print("done")
 
 
+def _extract_2023_nested() -> None:
+    """
+    The 2023 annual zip extracts to a subfolder containing 12 monthly zips.
+    This function extracts each of those inner zips into CITIBIKE_DIR.
+    """
+    inner_dir = os.path.join(CITIBIKE_DIR, "2023-citibike-tripdata")
+    if not os.path.isdir(inner_dir):
+        print("  2023 inner folder not found — run _download_zip first")
+        return
+
+    inner_zips = sorted(glob.glob(os.path.join(inner_dir, "*.zip")))
+    for zpath in inner_zips:
+        name = os.path.basename(zpath)
+        # check if already extracted (any CSV with this month prefix exists)
+        ym = name[:6]  # e.g. "202301"
+        already = glob.glob(os.path.join(CITIBIKE_DIR, f"{ym}*.csv"))
+        if already:
+            print(f"  [skip] {name} already extracted")
+            continue
+        print(f"  extracting inner {name} …", end=" ", flush=True)
+        with zipfile.ZipFile(zpath, "r") as zf:
+            zf.extractall(CITIBIKE_DIR)
+        print("done")
+
+
 print("=== Citi Bike trip data ===")
 
-# 2023: single annual file
+# 2023: single annual file (contains monthly zips inside)
 _download_zip("2023-citibike-tripdata.zip")
+_extract_2023_nested()
 
 # 2024: one file per month
 for month in range(1, 13):
