@@ -32,3 +32,7 @@ venv/
 # OS
 .DS_Store
 Thumbs.db
+
+# Model files (large binaries — regenerate with src/train_models.py)
+models/*
+!models/.gitkeep
