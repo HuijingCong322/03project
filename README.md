@@ -34,7 +34,8 @@ Raw data is **not committed** (≈25 GB). Download it with the script below.
 │   ├── download_data.py       # Step 1 – download all raw data
 │   ├── build_dataset.py       # Step 2 – aggregate & merge into hourly_demand.csv
 │   ├── build_features.py      # Step 3 – feature engineering → features.parquet
-│   └── train_models.py        # Step 4 – train & evaluate all models
+│   ├── train_models.py        # Step 4 – train Ridge, RF, XGBoost, MLP
+│   └── train_lgbm.py          # Step 5 – train LightGBM, append to metrics.csv
 └── README.md
 ```
 
@@ -124,22 +125,23 @@ Hours with zero departures are included (filled as 0) so the model learns quiet 
 
 ## Models and Results
 
-Four regression models are trained and compared using RMSE and MAE.
+Five regression models are trained and compared using RMSE and MAE.
 
-**Training scale:** Ridge and XGBoost use the full 38M-row train set. Random Forest and MLP use a 5M-row random sample due to sklearn's scaling limitations. XGBoost uses histogram-based tree building (`tree_method=hist`) with early stopping on the validation set.
+**Training scale:** Ridge, XGBoost, and LightGBM use the full 38M-row train set. Random Forest and MLP use a 5M-row random sample due to sklearn's scaling limitations. XGBoost and LightGBM both use early stopping on the validation set.
 
 ### Evaluation results
 
 | Model        | Val RMSE | Val MAE | Test RMSE | Test MAE | Train data  |
 | ------------ | -------- | ------- | --------- | -------- | ----------- |
-| XGBoost *    | 2.232    | 1.172   | 1.536     | 0.788    | 38M (full)  |
+| LightGBM *   | 2.137    | 1.129   | 1.503     | 0.769    | 38M (full)  |
+| XGBoost      | 2.232    | 1.172   | 1.536     | 0.788    | 38M (full)  |
 | MLP          | 2.249    | 1.169   | 1.564     | 0.792    | 5M (sample) |
 | RandomForest | 2.288    | 1.183   | 1.566     | 0.808    | 5M (sample) |
 | Ridge        | 2.626    | 1.345   | 1.720     | 0.841    | 38M (full)  |
 
 \* best model
 
-**XGBoost performs best** on both val and test sets (test RMSE = 1.536, meaning average prediction error ≈ 1.5 departures per station per hour). Ridge lags behind the other three, confirming that the demand–feature relationship is non-linear. Val RMSE is higher than test RMSE across all models because Oct–Nov is the busiest autumn period with higher demand variance.
+**LightGBM performs best** across all splits (test RMSE = 1.503, MAE = 0.769), edging out XGBoost by ~2% on RMSE. Both gradient boosting models substantially outperform Ridge, confirming a non-linear demand–feature relationship. Val RMSE is higher than test RMSE across all models because Oct–Nov is the busiest autumn period with higher demand variance.
 
 Full metrics saved in `results/metrics.csv`.
 
@@ -148,5 +150,5 @@ Full metrics saved in `results/metrics.csv`.
 - [x] Data download pipeline (`src/download_data.py`)
 - [x] Hourly aggregation + weather/holiday merge (`src/build_dataset.py`)
 - [x] Feature engineering — time features + lag features (`src/build_features.py`)
-- [x] Model training & evaluation — Ridge, RF, XGBoost, MLP (`src/train_models.py`)
+- [x] Model training & evaluation — Ridge, RF, XGBoost, MLP (`src/train_models.py`), LightGBM (`src/train_lgbm.py`)
 - [ ] Results analysis — feature importance, error distribution, visualization
