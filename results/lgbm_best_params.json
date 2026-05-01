@@ -1,0 +1,11 @@
+{
+  "best_val_rmse": 2.1414841472790616,
+  "num_leaves": 457,
+  "learning_rate": 0.018326612262742327,
+  "min_child_samples": 48,
+  "feature_fraction": 0.7424094503442709,
+  "bagging_fraction": 0.9644934500307779,
+  "reg_alpha": 0.3799139438836839,
+  "reg_lambda": 9.400202452679208,
+  "max_bin": 511
+}

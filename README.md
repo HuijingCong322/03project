@@ -35,7 +35,8 @@ Raw data is **not committed** (≈25 GB). Download it with the script below.
 │   ├── build_dataset.py       # Step 2 – aggregate & merge into hourly_demand.csv
 │   ├── build_features.py      # Step 3 – feature engineering → features.parquet
 │   ├── train_models.py        # Step 4 – train Ridge, RF, XGBoost, MLP
-│   └── train_lgbm.py          # Step 5 – train LightGBM, append to metrics.csv
+│   ├── train_lgbm.py          # Step 5 – train LightGBM, append to metrics.csv
+│   └── tune_lgbm.py           # Step 6 – Optuna tuning → LightGBM_tuned
 └── README.md
 ```
 
@@ -125,25 +126,39 @@ Hours with zero departures are included (filled as 0) so the model learns quiet 
 
 ## Models and Results
 
-Five regression models are trained and compared using RMSE and MAE.
+Six models are trained and compared using RMSE and MAE.
 
-**Training scale:** Ridge, XGBoost, and LightGBM use the full 38M-row train set. Random Forest and MLP use a 5M-row random sample due to sklearn's scaling limitations. XGBoost and LightGBM both use early stopping on the validation set.
+**Training scale:** Ridge, XGBoost, LightGBM, and LightGBM_tuned use the full 38M-row train set. Random Forest and MLP use a 5M-row random sample due to sklearn's scaling limitations. XGBoost and LightGBM both use early stopping on the validation set.
 
 ### Evaluation results
 
-| Model        | Val RMSE | Val MAE | Test RMSE | Test MAE | Train data  |
-| ------------ | -------- | ------- | --------- | -------- | ----------- |
-| LightGBM *   | 2.137    | 1.129   | 1.503     | 0.769    | 38M (full)  |
-| XGBoost      | 2.232    | 1.172   | 1.536     | 0.788    | 38M (full)  |
-| MLP          | 2.249    | 1.169   | 1.564     | 0.792    | 5M (sample) |
-| RandomForest | 2.288    | 1.183   | 1.566     | 0.808    | 5M (sample) |
-| Ridge        | 2.626    | 1.345   | 1.720     | 0.841    | 38M (full)  |
+| Model           | Val RMSE | Val MAE | Test RMSE | Test MAE | Train data  |
+| --------------- | -------- | ------- | --------- | -------- | ----------- |
+| LightGBM_tuned *| 2.098    | 1.099   | 1.501     | 0.759    | 38M (full)  |
+| LightGBM        | 2.137    | 1.129   | 1.503     | 0.769    | 38M (full)  |
+| XGBoost         | 2.232    | 1.172   | 1.536     | 0.788    | 38M (full)  |
+| MLP             | 2.249    | 1.169   | 1.564     | 0.792    | 5M (sample) |
+| RandomForest    | 2.288    | 1.183   | 1.566     | 0.808    | 5M (sample) |
+| Ridge           | 2.626    | 1.345   | 1.720     | 0.841    | 38M (full)  |
 
 \* best model
 
-**LightGBM performs best** across all splits (test RMSE = 1.503, MAE = 0.769), edging out XGBoost by ~2% on RMSE. Both gradient boosting models substantially outperform Ridge, confirming a non-linear demand–feature relationship. Val RMSE is higher than test RMSE across all models because Oct–Nov is the busiest autumn period with higher demand variance.
+**LightGBM_tuned performs best** (test RMSE = 1.501, MAE = 0.759), improving over the default LightGBM by ~0.1% RMSE and ~1.3% MAE. The tuning used 30 Optuna TPE trials on a 5M-row subsample, then retrained on the full 38M set.
 
-Full metrics saved in `results/metrics.csv`.
+Best hyperparameters found:
+
+| Parameter          | Value  |
+| ------------------ | ------ |
+| `num_leaves`       | 457    |
+| `learning_rate`    | 0.0183 |
+| `min_child_samples`| 48     |
+| `feature_fraction` | 0.742  |
+| `bagging_fraction` | 0.964  |
+| `reg_alpha`        | 0.380  |
+| `reg_lambda`       | 9.400  |
+| `max_bin`          | 511    |
+
+Full metrics saved in `results/metrics.csv`. Best params saved in `results/lgbm_best_params.json`.
 
 ## Status
 
@@ -151,4 +166,5 @@ Full metrics saved in `results/metrics.csv`.
 - [x] Hourly aggregation + weather/holiday merge (`src/build_dataset.py`)
 - [x] Feature engineering — time features + lag features (`src/build_features.py`)
 - [x] Model training & evaluation — Ridge, RF, XGBoost, MLP (`src/train_models.py`), LightGBM (`src/train_lgbm.py`)
+- [x] Hyperparameter tuning — LightGBM via Optuna 30-trial TPE search (`src/tune_lgbm.py`)
 - [ ] Results analysis — feature importance, error distribution, visualization
