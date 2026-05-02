@@ -250,6 +250,32 @@ Analysis on val + test (Oct–Dec 2024):
 - **Day of week matters little:** RMSE varies only from 1.82 (Sunday) to 1.99 (Tuesday) — a 9% spread. Weekends are not harder to predict than weekdays despite different usage patterns.
 - **Winter months are easier:** RMSE drops from 2.24 (October) to 1.50 (December). Lower overall demand in colder months means fewer extreme-demand spikes, reducing absolute errors.
 
+### Actual vs Predicted
+
+![Actual vs Predicted](results/actual_vs_pred.png)
+
+Three complementary views of model fit on the test set (Dec 2024):
+
+**City-wide daily totals:**
+
+| Metric | Value                  |
+| ------ | ---------------------- |
+| RMSE   | ~12,400 departures/day |
+| MAE    | ~10,100 departures/day |
+
+**Focus station (W 21 St & 6 Ave — highest demand):**
+
+| Metric | Value          |
+| ------ | -------------- |
+| RMSE   | 5.58 dep/hr    |
+| MAE    | 3.56 dep/hr    |
+
+**Key findings:**
+
+- **Hexbin scatter:** The density is tightly concentrated along the perfect-fit diagonal for low-demand hours (0–5 departures), confirming accurate predictions for the majority of rows. At higher demand the cloud widens, consistent with the fan-out seen in the error distribution.
+- **City-wide time series:** Aggregated daily totals track the actual trend closely. The model captures the Christmas/holiday dip (Dec 24–26) and the lower overall December ridership.
+- **Single-station time series:** The model follows the daily rhythm (overnight low, daytime peaks) well even at the hardest station. It systematically under-predicts the largest spikes — consistent with the bias toward underestimation at high demand.
+
 ### Per-Station Error Analysis
 
 ![Station Error](results/station_error.png)
