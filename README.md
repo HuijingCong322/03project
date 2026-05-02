@@ -188,6 +188,26 @@ The three lag features together account for **85% of gain**, confirming that sho
 
 **Split count (usage frequency):** Latitude, longitude, and temperature are used far more frequently in splits than their gain suggests — the model uses them for fine-grained partitioning even though each individual split contributes little to loss reduction.
 
+### Error Distribution
+
+![Error Distribution](results/error_distribution.png)
+
+Analysis on the test set (Dec 2024, 1.85M station-hour rows):
+
+| Metric                | Value  |
+| --------------------- | ------ |
+| Mean residual         | -0.101 |
+| Std of residuals      | 1.498  |
+| % rows overestimated  | 68.5%  |
+| % rows underestimated | 27.4%  |
+
+**Key findings:**
+
+- **Near-zero bias:** Mean residual = -0.101, meaning the model very slightly underestimates on average. The residual distribution is sharply peaked around zero with a slight left skew.
+- **Overestimation dominates for zero-demand hours:** 68.5% of predictions are above actual — largely because the model predicts a small positive value for quiet hours that actually had 0 departures (62% of the test set).
+- **RMSE scales sharply with demand level:** Errors are small for low-demand hours (RMSE = 0.57 for zero-departure hours) but grow rapidly — RMSE reaches 20 for the 79 extreme-demand hours (50+ departures). The model struggles most at predicting demand spikes.
+- **Actual vs predicted scatter** follows the diagonal closely at low demand, with fan-out at higher values confirming the above pattern.
+
 ## Status
 
 - [x] Data download pipeline (`src/download_data.py`)
