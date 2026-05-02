@@ -307,11 +307,29 @@ Analysis on 2,453 stations with ≥100 test hours (Dec 2024):
 - **RMSE scales with demand:** The RMSE vs mean demand scatter confirms a strong positive relationship — busier stations are systematically harder to predict. The median RMSE (0.82) is much lower than the mean (1.14), showing the distribution is right-skewed by a small number of very hard stations.
 - **Geographic pattern:** The geographic scatter shows errors concentrated in lower and midtown Manhattan, with quieter Brooklyn and Queens stations well-predicted.
 
-## Status
+## Conclusion
 
-- [x] Data download pipeline (`src/download_data.py`)
-- [x] Hourly aggregation + weather/holiday merge (`src/build_dataset.py`)
-- [x] Feature engineering — time features + lag features (`src/build_features.py`)
-- [x] Model training & evaluation — Ridge, RF, XGBoost, MLP (`src/train_models.py`), LightGBM (`src/train_lgbm.py`)
-- [x] Hyperparameter tuning — LightGBM via Optuna 30-trial TPE search (`src/tune_lgbm.py`)
-- [x] Results analysis — feature importance, error distribution, temporal error (`src/analysis_*.py`)
+The tuned LightGBM model achieves **test RMSE = 1.501** and **MAE = 0.759** departures/hr across 1.85M station-hour rows in December 2024. Several consistent patterns emerge across all analyses:
+
+- **Short-term autocorrelation dominates.** The three lag features (lag_1h, lag_2h, lag_24h) account for 85% of gain, meaning knowing what happened in the past few hours is by far the most useful signal. Weather and calendar features contribute modestly but are still meaningful.
+- **Errors are demand-proportional.** The model is very accurate for the majority of rows (62% have zero departures, RMSE = 0.57 for that bucket) but struggles at high-demand hours and busy stations. RMSE for 50+ departure hours reaches 20; the worst station (W 21 St & 6 Ave) has RMSE = 5.58.
+- **Temporal patterns are predictable.** PM rush hour (17:00) is hardest (RMSE = 3.02); overnight hours are easy (0.51 at 04:00). Day of week has little impact (only 9% variation). December errors are lower than October/November because winter reduces peak demand.
+- **Geography matters.** Errors concentrate in Midtown and Lower Manhattan. Outer-borough stations are well-predicted. The model captures location-level demand through latitude/longitude and lag features rather than explicit station embeddings.
+
+**Possible next steps:** station-level embeddings or station-cluster features; separate models for high-demand vs low-demand stations; real-time retraining pipeline; predicting arrivals alongside departures for rebalancing.
+
+## Pipeline Steps
+
+| Step | Script                                   | Output                             |
+| ---- | ---------------------------------------- | ---------------------------------- |
+| 1    | `src/download_data.py`                   | `data/raw/`                        |
+| 2    | `src/build_dataset.py`                   | `data/processed/hourly_demand.csv` |
+| 3    | `src/build_features.py`                  | `data/processed/features.parquet`  |
+| 4    | `src/train_models.py`                    | `models/`, `results/metrics.csv`   |
+| 5    | `src/train_lgbm.py`                      | `models/lightgbm.txt`              |
+| 6    | `src/tune_lgbm.py`                       | `models/lightgbm_tuned.txt`        |
+| 7    | `src/analysis_feature_importance.py`     | `results/feature_importance.png`   |
+| 8    | `src/analysis_error_dist.py`             | `results/error_distribution.png`   |
+| 9    | `src/analysis_temporal.py`               | `results/temporal_error.png`       |
+| 10   | `src/analysis_station_error.py`          | `results/station_error.png`        |
+| 11   | `src/analysis_actual_vs_pred.py`         | `results/actual_vs_pred.png`       |
