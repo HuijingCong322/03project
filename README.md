@@ -250,6 +250,37 @@ Analysis on val + test (Oct–Dec 2024):
 - **Day of week matters little:** RMSE varies only from 1.82 (Sunday) to 1.99 (Tuesday) — a 9% spread. Weekends are not harder to predict than weekdays despite different usage patterns.
 - **Winter months are easier:** RMSE drops from 2.24 (October) to 1.50 (December). Lower overall demand in colder months means fewer extreme-demand spikes, reducing absolute errors.
 
+### Per-Station Error Analysis
+
+![Station Error](results/station_error.png)
+
+Analysis on 2,453 stations with ≥100 test hours (Dec 2024):
+
+| Metric          | Value  |
+| --------------- | ------ |
+| Mean RMSE       | 1.139  |
+| Median RMSE     | 0.821  |
+| 90th pct RMSE   | 2.582  |
+| Max RMSE        | 5.576  |
+| Min RMSE        | 0.010  |
+
+**Top 10 highest-error stations (all in Manhattan):**
+
+| Station                            | RMSE  | Avg demand/hr |
+| ---------------------------------- | ----- | ------------- |
+| W 21 St & 6 Ave                    | 5.576 | 12.0          |
+| W 31 St & 7 Ave                    | 5.459 | 10.8          |
+| 9 Ave & W 33 St                    | 5.183 | 9.5           |
+| Central Park S & Grand Army Plaza  | 4.853 | 6.5           |
+| Lafayette St & E 8 St              | 4.803 | 10.2          |
+
+**Key findings:**
+
+- **High-error stations are high-demand Manhattan hubs:** All top-10 worst stations are in Midtown and Lower Manhattan (Penn Station area, Chelsea, Union Square, Times Square corridor). They average 6-12 departures/hr and are subject to volatile demand spikes (events, weather, commute disruptions) that the model cannot fully capture.
+- **Low-error stations are near-inactive:** The 10 best-predicted stations all have avg demand ≈ 0 departures/hr — these are likely new or seasonal stations in outer boroughs. Predicting near-zero is trivially easy.
+- **RMSE scales with demand:** The RMSE vs mean demand scatter confirms a strong positive relationship — busier stations are systematically harder to predict. The median RMSE (0.82) is much lower than the mean (1.14), showing the distribution is right-skewed by a small number of very hard stations.
+- **Geographic pattern:** The geographic scatter shows errors concentrated in lower and midtown Manhattan, with quieter Brooklyn and Queens stations well-predicted.
+
 ## Status
 
 - [x] Data download pipeline (`src/download_data.py`)
