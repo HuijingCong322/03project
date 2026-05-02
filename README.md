@@ -208,6 +208,48 @@ Analysis on the test set (Dec 2024, 1.85M station-hour rows):
 - **RMSE scales sharply with demand level:** Errors are small for low-demand hours (RMSE = 0.57 for zero-departure hours) but grow rapidly — RMSE reaches 20 for the 79 extreme-demand hours (50+ departures). The model struggles most at predicting demand spikes.
 - **Actual vs predicted scatter** follows the diagonal closely at low demand, with fan-out at higher values confirming the above pattern.
 
+### Temporal Error Analysis
+
+![Temporal Error](results/temporal_error.png)
+
+Analysis on val + test (Oct–Dec 2024):
+
+**RMSE by hour of day:**
+
+| Period          | Hours    | RMSE range  |
+| --------------- | -------- | ----------- |
+| Night           | 00-05    | 0.51 - 1.11 |
+| Morning ramp    | 06-09    | 1.23 - 2.48 |
+| Midday          | 10-16    | 1.93 - 2.62 |
+| PM peak (worst) | 17:00    | 3.02        |
+| Evening decline | 18-23    | 1.35 - 2.81 |
+
+**RMSE by day of week:**
+
+| Day | RMSE  |
+| --- | ----- |
+| Mon | 1.917 |
+| Tue | 1.994 |
+| Wed | 1.966 |
+| Thu | 1.922 |
+| Fri | 1.878 |
+| Sat | 1.919 |
+| Sun | 1.820 |
+
+**RMSE by month:**
+
+| Month            | RMSE  |
+| ---------------- | ----- |
+| Oct 2024 (val)   | 2.242 |
+| Nov 2024 (val)   | 1.937 |
+| Dec 2024 (test)  | 1.501 |
+
+**Key findings:**
+
+- **PM rush hour is hardest to predict:** RMSE peaks at 17:00 (3.02), over 6x the overnight minimum (0.51 at 04:00). The AM peak (07:00-09:00, RMSE 1.86-2.48) is also elevated. High-demand hours with volatile ridership cause the largest errors.
+- **Day of week matters little:** RMSE varies only from 1.82 (Sunday) to 1.99 (Tuesday) — a 9% spread. Weekends are not harder to predict than weekdays despite different usage patterns.
+- **Winter months are easier:** RMSE drops from 2.24 (October) to 1.50 (December). Lower overall demand in colder months means fewer extreme-demand spikes, reducing absolute errors.
+
 ## Status
 
 - [x] Data download pipeline (`src/download_data.py`)
@@ -215,4 +257,4 @@ Analysis on the test set (Dec 2024, 1.85M station-hour rows):
 - [x] Feature engineering — time features + lag features (`src/build_features.py`)
 - [x] Model training & evaluation — Ridge, RF, XGBoost, MLP (`src/train_models.py`), LightGBM (`src/train_lgbm.py`)
 - [x] Hyperparameter tuning — LightGBM via Optuna 30-trial TPE search (`src/tune_lgbm.py`)
-- [ ] Results analysis — feature importance, error distribution, visualization
+- [x] Results analysis — feature importance, error distribution, temporal error (`src/analysis_*.py`)
