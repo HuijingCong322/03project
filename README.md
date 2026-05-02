@@ -30,13 +30,18 @@ Raw data is **not committed** (≈25 GB). Download it with the script below.
 ├── models/                    # Serialized model files (git-ignored)
 ├── results/
 │   └── metrics.csv            # RMSE / MAE for all models × splits
+├── results/
+│   ├── metrics.csv                 # RMSE / MAE for all models × splits
+│   ├── lgbm_best_params.json       # Best hyperparameters from Optuna search
+│   └── feature_importance.png      # Feature importance plot
 ├── src/
-│   ├── download_data.py       # Step 1 – download all raw data
-│   ├── build_dataset.py       # Step 2 – aggregate & merge into hourly_demand.csv
-│   ├── build_features.py      # Step 3 – feature engineering → features.parquet
-│   ├── train_models.py        # Step 4 – train Ridge, RF, XGBoost, MLP
-│   ├── train_lgbm.py          # Step 5 – train LightGBM, append to metrics.csv
-│   └── tune_lgbm.py           # Step 6 – Optuna tuning → LightGBM_tuned
+│   ├── download_data.py                  # Step 1 – download all raw data
+│   ├── build_dataset.py                  # Step 2 – aggregate & merge into hourly_demand.csv
+│   ├── build_features.py                 # Step 3 – feature engineering → features.parquet
+│   ├── train_models.py                   # Step 4 – train Ridge, RF, XGBoost, MLP
+│   ├── train_lgbm.py                     # Step 5 – train LightGBM
+│   ├── tune_lgbm.py                      # Step 6 – Optuna tuning → LightGBM_tuned
+│   └── analysis_feature_importance.py    # Step 7 – feature importance analysis
 └── README.md
 ```
 
@@ -159,6 +164,29 @@ Best hyperparameters found:
 | `max_bin`          | 511    |
 
 Full metrics saved in `results/metrics.csv`. Best params saved in `results/lgbm_best_params.json`.
+
+## Analysis
+
+### Feature Importance
+
+![Feature Importance](results/feature_importance.png)
+
+**Gain (contribution to loss reduction):**
+
+| Feature     | Gain % | Interpretation                                     |
+| ----------- | ------ | -------------------------------------------------- |
+| Lag 1h      | 54.0%  | Recent demand is the strongest predictor           |
+| Lag 24h     | 20.1%  | Same hour yesterday captures daily rhythm          |
+| Lag 2h      | 11.2%  | Short-term momentum still informative              |
+| Hour of day | 5.9%   | Intra-day demand pattern                           |
+| Lat / Lng   | 5.0%   | Station location encodes neighborhood demand level |
+| Day of week | 1.6%   | Weekday vs weekend pattern                         |
+| Temperature | 1.1%   | Weather has modest but real influence              |
+| Others      | 1.1%   | Precipitation, month, holidays, snowfall           |
+
+The three lag features together account for **85% of gain**, confirming that short-term autocorrelation dominates prediction. Weather and calendar features contribute modestly but are still included in the model.
+
+**Split count (usage frequency):** Latitude, longitude, and temperature are used far more frequently in splits than their gain suggests — the model uses them for fine-grained partitioning even though each individual split contributes little to loss reduction.
 
 ## Status
 
