@@ -50,7 +50,7 @@ Raw data is **not committed** (≈25 GB). Download it with the script below.
 ### 1. Install dependencies
 
 ```bash
-pip install pandas requests holidays pyarrow xgboost scikit-learn joblib
+pip install -r requirements.txt
 ```
 
 ### 2. Download raw data
