@@ -333,3 +333,4 @@ The tuned LightGBM model achieves **test RMSE = 1.501** and **MAE = 0.759** depa
 | 9    | `src/analysis_temporal.py`               | `results/temporal_error.png`       |
 | 10   | `src/analysis_station_error.py`          | `results/station_error.png`        |
 | 11   | `src/analysis_actual_vs_pred.py`         | `results/actual_vs_pred.png`       |
+| 12   | `src/analysis_sample_complexity.py`      | `results/sample_complexity.png`, `results/sample_complexity.csv` |
