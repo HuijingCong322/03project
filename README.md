@@ -307,6 +307,28 @@ Analysis on 2,453 stations with ≥100 test hours (Dec 2024):
 - **RMSE scales with demand:** The RMSE vs mean demand scatter confirms a strong positive relationship — busier stations are systematically harder to predict. The median RMSE (0.82) is much lower than the mean (1.14), showing the distribution is right-skewed by a small number of very hard stations.
 - **Geographic pattern:** The geographic scatter shows errors concentrated in lower and midtown Manhattan, with quieter Brooklyn and Queens stations well-predicted.
 
+### Sample Complexity
+
+![Sample Complexity](results/sample_complexity.png)
+
+Analysis of Val RMSE vs training set size (10%–100% of the 38M-row train set) for Ridge, XGBoost, LightGBM, and RandomForest. RandomForest is capped at 10M rows.
+
+| Frac | Train rows | Ridge | XGBoost | LightGBM | RandomForest |
+|------|-----------|-------|---------|----------|--------------|
+| 10%  | 3.8M      | 2.626 | 2.245   | 2.172    | 2.293        |
+| 20%  | 7.6M      | 2.636 | 2.239   | 2.158    | 2.280        |
+| 40%  | 15.3M     | 2.667 | 2.237   | 2.145    | 2.275        |
+| 60%  | 22.9M     | 2.681 | 2.234   | 2.138    | 2.275        |
+| 80%  | 30.5M     | 2.691 | 2.232   | 2.139    | 2.276        |
+| 100% | 38.1M     | 2.699 | 2.231   | 2.138    | 2.276        |
+
+**Key findings:**
+
+- **LightGBM converges at 10% of training data:** Val RMSE drops only 0.034 across a 10x increase in training size — the curve is essentially flat from 40% onward. 3.8M rows already capture most of the learnable signal.
+- **Ridge degrades slightly with more data (2.626 → 2.699):** The fixed regularization (`alpha=1.0`) becomes relatively weaker as data grows 10x, combined with mild seasonal distribution shift between train and val.
+- **Model rankings are stable from 10% onward:** LightGBM > XGBoost > RandomForest > Ridge holds at every fraction. More data compresses the gaps but does not change the ranking.
+- **Performance bottleneck is feature expressiveness, not data quantity.** Richer features (weather lag/lead, station embeddings) would likely improve performance more than adding more rows.
+
 ## Conclusion
 
 The tuned LightGBM model achieves **test RMSE = 1.501** and **MAE = 0.759** departures/hr across 1.85M station-hour rows in December 2024. Several consistent patterns emerge across all analyses:
