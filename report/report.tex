@@ -362,6 +362,61 @@ including the Christmas holiday dip (December 24--26). At the busiest station
 (W~21~St~\&~6~Ave, RMSE = 5.58), the model captures the daily demand cycle
 well but systematically underestimates the largest peaks.
 
+\subsection{Sample Complexity}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.75\linewidth]{../results/sample_complexity.png}
+  \caption{Validation RMSE as a function of training set size for Ridge,
+           XGBoost, LightGBM, and Random Forest. Random Forest is capped at
+           10M rows due to scaling constraints.}
+  \label{fig:sample}
+\end{figure}
+
+To understand how each model's performance scales with data, we trained
+Ridge, XGBoost, LightGBM, and Random Forest on six fractions of the training
+set: 10\%, 20\%, 40\%, 60\%, 80\%, and 100\% (corresponding to roughly
+3.8M to 38.1M rows). The validation set is fixed at Oct--Nov 2024 across all
+runs. Table~\ref{tab:sample} reports validation RMSE at each fraction.
+
+\begin{table}[H]
+\centering
+\caption{Validation RMSE vs.\ training set size.}
+\label{tab:sample}
+\begin{tabular}{lcccccc}
+\toprule
+Frac & 10\% & 20\% & 40\% & 60\% & 80\% & 100\% \\
+Train rows & 3.8M & 7.6M & 15.3M & 22.9M & 30.5M & 38.1M \\
+\midrule
+Ridge        & 2.626 & 2.636 & 2.667 & 2.681 & 2.691 & 2.699 \\
+XGBoost      & 2.245 & 2.239 & 2.237 & 2.234 & 2.232 & 2.231 \\
+LightGBM     & 2.172 & 2.158 & 2.145 & 2.138 & 2.139 & 2.138 \\
+Random Forest & 2.293 & 2.280 & 2.275 & 2.275 & 2.276 & 2.276 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Three patterns emerge from Figure~\ref{fig:sample}. First, LightGBM's
+validation RMSE drops by only 0.034 as the training set grows tenfold,
+and the curve is essentially flat from 40\% onward. This indicates that
+3.8M rows already capture most of the learnable signal --- the remaining
+34M rows yield diminishing returns. Second, Ridge Regression actually
+\emph{degrades} slightly with more data (2.626 $\rightarrow$ 2.699). Because
+the regularization strength $\alpha=1$ is fixed, its relative effect weakens
+as the dataset grows; combined with the mild seasonal distribution shift
+between training (Jan 2023 -- Sep 2024) and validation (Oct -- Nov 2024),
+this leads to slightly worse generalization. Third, the model ranking
+LightGBM $>$ XGBoost $>$ Random Forest $>$ Ridge is stable across all
+fractions; additional data shrinks the gaps between models but never
+changes the ordering.
+
+The most important takeaway is that the bottleneck on this task is
+\textbf{feature expressiveness, not data quantity}. All nonlinear models
+saturate well before the full training set is consumed. Future improvements
+are more likely to come from richer features --- weather lag/lead variables,
+station embeddings, or cluster-level aggregates --- than from collecting
+more data.
+
 % ── 7. Conclusion ─────────────────────────────────────────────────────────────
 \section{Conclusion}
 
