@@ -84,10 +84,9 @@ standard Gradient Boosting.
 learning approach based on Spatio-Temporal Graph Convolutional Networks
 (ST-GCN) with temporal convolutions and self-attention, explicitly modeling
 spatial dependencies between stations. Their model achieves a test RMSE of 2.36
-and MAE of 1.62. Our tuned LightGBM achieves RMSE = 1.501 and MAE = 0.759,
-which is considerably better, suggesting that strong lag features and careful
-feature engineering can outperform graph neural network approaches on this task
-while being far simpler to implement and train.
+and MAE of 1.62. We note, however, that direct numerical comparison across studies should be interpreted with caution: train/test splits, station coverage, and
+aggregation periods differ across works, so improvements may partly reflect
+data setup rather than model capability alone.
 
 \citet{cortez2023scalability} evaluate a broader set of methods —
 including ARIMA, Linear Regression, Random Forest, Prophet, and XGBoost — on
@@ -219,16 +218,21 @@ the average per-hour prediction error in number of departures.
 \section{Results}
 
 Table~\ref{tab:results} reports RMSE and MAE for all six models on the
-validation and test sets.
+validation and test sets, alongside a naive baseline that simply predicts
+the previous hour's demand at the same station ($\hat{y} = \text{lag\_1h}$).
 
 \begin{table}[H]
 \centering
 \caption{Model performance on validation (Oct--Nov 2024) and test (Dec 2024) sets.
-         RF and MLP are trained on a 5M-row subsample; all others use 38M rows.}
+         RF and MLP are trained on a 5M-row random subsample due to memory
+         constraints; all other models use the full 38M-row training set.
+         Naive baseline simply outputs the previous hour's departures (lag\_1h).}
 \label{tab:results}
 \begin{tabular}{lcccc}
 \toprule
 Model & Val RMSE & Val MAE & Test RMSE & Test MAE \\
+\midrule
+Naive (lag\_1h)      & 3.119 & 1.479 & 2.017 & 0.923 \\
 \midrule
 Ridge Regression     & 2.626 & 1.345 & 1.720 & 0.841 \\
 Random Forest        & 2.288 & 1.183 & 1.566 & 0.808 \\
@@ -240,14 +244,28 @@ LightGBM (tuned)     & \textbf{2.098} & \textbf{1.099} & \textbf{1.501} & \textb
 \end{tabular}
 \end{table}
 
-The tuned LightGBM achieves the best performance on both splits. Compared to
-Ridge Regression, it reduces test RMSE by 12.7\% and MAE by 9.7\%. The gap
-between LightGBM and the other nonlinear models is relatively small — XGBoost
-comes close (test RMSE 1.536) — but LightGBM's efficiency on the full 38M-row
-training set gives it an advantage over Random Forest and MLP, which require
-subsampling. Hyperparameter tuning provides only a marginal additional gain over
-the default LightGBM (0.002 RMSE), suggesting the model is already well-suited
-to this task out of the box.
+All trained models clearly outperform the naive baseline. The tuned LightGBM
+reduces test RMSE by 25.6\% (2.017 $\rightarrow$ 1.501) and test MAE by
+17.8\% (0.923 $\rightarrow$ 0.759) compared to the naive predictor, and even
+the linear Ridge model improves test RMSE by 14.7\%. This confirms that the
+nonlinear models are learning meaningful patterns beyond simple temporal
+persistence, and that the additional features (lag\_2h, lag\_24h, weather,
+calendar, station coordinates) contribute real predictive value rather than
+merely encoding lag\_1h in a different form.
+
+Among the trained models, the tuned LightGBM achieves the best performance
+on both splits. Compared to Ridge Regression, it reduces test RMSE by 12.7\%
+and MAE by 9.7\%. The gap between LightGBM and the other nonlinear models
+is relatively small — XGBoost comes close (test RMSE 1.536) — but
+LightGBM's efficiency on the full 38M-row training set gives it an advantage
+over Random Forest and MLP, which are trained on a 5M-row random subsample
+due to memory constraints; this subsampling makes their comparison with
+full-data models approximate rather than exact. Hyperparameter tuning provides only a marginal additional gain over the default
+LightGBM (0.002 RMSE on the test set). This modest improvement likely reflects
+that the model is already near the noise floor of the task: with 62\% of
+test rows having zero departures and demand dominated by strong lag
+autocorrelation, the remaining variance is largely stochastic and not
+reducible by further tuning the search space.
 
 Our test RMSE of 1.501 compares favorably against \citet{zhou2024stgcn}, who
 report RMSE = 2.36 on the same system using a graph neural network, and against
@@ -429,10 +447,13 @@ the same dataset.
 Our analysis reveals several consistent patterns. Short-term lag features
 dominate: the three lag variables account for 85\% of feature importance gain,
 confirming that recent demand history is far more informative than weather or
-calendar features alone. Errors scale with demand level, with the PM rush hour
-and high-demand Midtown Manhattan stations being the hardest cases. Day of week
-has little impact, while colder months with lower peak demand are easier to
-predict.
+calendar features alone. However, errors scale strongly with demand level:
+high-demand stations in Midtown Manhattan show RMSE up to 5.58 departures per
+hour, and the PM rush hour is the hardest period to predict (RMSE = 3.02).
+These high-error cases represent precisely the operationally critical
+scenarios where accurate forecasts matter most --- a limitation that future
+work should address directly. Day of week has little impact overall, while
+colder months with lower peak demand are easier to predict.
 
 Possible directions for future work include station-level embeddings or
 clustering to better capture neighborhood-specific demand patterns, separate
