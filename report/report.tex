@@ -219,16 +219,20 @@ the average per-hour prediction error in number of departures.
 \section{Results}
 
 Table~\ref{tab:results} reports RMSE and MAE for all six models on the
-validation and test sets.
+validation and test sets, alongside a naive baseline that simply predicts
+the previous hour's demand at the same station ($\hat{y} = \text{lag\_1h}$).
 
 \begin{table}[H]
 \centering
 \caption{Model performance on validation (Oct--Nov 2024) and test (Dec 2024) sets.
-         RF and MLP are trained on a 5M-row subsample; all others use 38M rows.}
+         RF and MLP are trained on a 5M-row subsample; all others use 38M rows.
+         Naive baseline simply outputs the previous hour's departures.}
 \label{tab:results}
 \begin{tabular}{lcccc}
 \toprule
 Model & Val RMSE & Val MAE & Test RMSE & Test MAE \\
+\midrule
+Naive (lag\_1h)      & 3.119 & 1.479 & 2.017 & 0.923 \\
 \midrule
 Ridge Regression     & 2.626 & 1.345 & 1.720 & 0.841 \\
 Random Forest        & 2.288 & 1.183 & 1.566 & 0.808 \\
@@ -240,14 +244,24 @@ LightGBM (tuned)     & \textbf{2.098} & \textbf{1.099} & \textbf{1.501} & \textb
 \end{tabular}
 \end{table}
 
-The tuned LightGBM achieves the best performance on both splits. Compared to
-Ridge Regression, it reduces test RMSE by 12.7\% and MAE by 9.7\%. The gap
-between LightGBM and the other nonlinear models is relatively small — XGBoost
-comes close (test RMSE 1.536) — but LightGBM's efficiency on the full 38M-row
-training set gives it an advantage over Random Forest and MLP, which require
-subsampling. Hyperparameter tuning provides only a marginal additional gain over
-the default LightGBM (0.002 RMSE), suggesting the model is already well-suited
-to this task out of the box.
+All trained models clearly outperform the naive baseline. The tuned LightGBM
+reduces test RMSE by 25.6\% (2.017 $\rightarrow$ 1.501) and test MAE by
+17.8\% (0.923 $\rightarrow$ 0.759) compared to the naive predictor, and even
+the linear Ridge model improves test RMSE by 14.7\%. This confirms that the
+nonlinear models are learning meaningful patterns beyond simple temporal
+persistence, and that the additional features (lag\_2h, lag\_24h, weather,
+calendar, station coordinates) contribute real predictive value rather than
+merely encoding lag\_1h in a different form.
+
+Among the trained models, the tuned LightGBM achieves the best performance
+on both splits. Compared to Ridge Regression, it reduces test RMSE by 12.7\%
+and MAE by 9.7\%. The gap between LightGBM and the other nonlinear models
+is relatively small — XGBoost comes close (test RMSE 1.536) — but
+LightGBM's efficiency on the full 38M-row training set gives it an advantage
+over Random Forest and MLP, which require subsampling. Hyperparameter tuning
+provides only a marginal additional gain over the default LightGBM
+(0.002 RMSE), suggesting the model is already well-suited to this task out
+of the box.
 
 Our test RMSE of 1.501 compares favorably against \citet{zhou2024stgcn}, who
 report RMSE = 2.36 on the same system using a graph neural network, and against

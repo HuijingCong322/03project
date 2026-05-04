@@ -139,6 +139,7 @@ Six models are trained and compared using RMSE and MAE.
 
 | Model           | Val RMSE | Val MAE | Test RMSE | Test MAE | Train data  |
 | --------------- | -------- | ------- | --------- | -------- | ----------- |
+| Naive (lag_1h)  | 3.119    | 1.479   | 2.017     | 0.923    | none        |
 | LightGBM_tuned *| 2.098    | 1.099   | 1.501     | 0.759    | 38M (full)  |
 | LightGBM        | 2.137    | 1.129   | 1.503     | 0.769    | 38M (full)  |
 | XGBoost         | 2.232    | 1.172   | 1.536     | 0.788    | 38M (full)  |
@@ -147,6 +148,8 @@ Six models are trained and compared using RMSE and MAE.
 | Ridge           | 2.626    | 1.345   | 1.720     | 0.841    | 38M (full)  |
 
 \* best model
+
+The **Naive (lag_1h)** baseline simply predicts the previous hour's departures at the same station. All trained models clearly beat it: LightGBM_tuned reduces test RMSE by 25.6% (2.017 → 1.501) and test MAE by 17.8%, confirming that the nonlinear models learn meaningful patterns beyond simple temporal persistence.
 
 **LightGBM_tuned performs best** (test RMSE = 1.501, MAE = 0.759), improving over the default LightGBM by ~0.1% RMSE and ~1.3% MAE. The tuning used 30 Optuna TPE trials on a 5M-row subsample, then retrained on the full 38M set.
 
@@ -356,3 +359,4 @@ The tuned LightGBM model achieves **test RMSE = 1.501** and **MAE = 0.759** depa
 | 10   | `src/analysis_station_error.py`          | `results/station_error.png`        |
 | 11   | `src/analysis_actual_vs_pred.py`         | `results/actual_vs_pred.png`       |
 | 12   | `src/analysis_sample_complexity.py`      | `results/sample_complexity.png`, `results/sample_complexity.csv` |
+| 13   | `src/eval_naive_baseline.py`             | Naive baseline row appended to `results/metrics.csv`             |
