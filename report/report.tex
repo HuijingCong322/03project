@@ -186,7 +186,7 @@ We train and compare six models with increasing complexity.
 as a weighted sum of features with L2 regularization and provides a lower bound
 on nonlinear methods.
 
-\textbf{Random Forest} \citep{ke2017lightgbm} is a nonlinear ensemble of
+\textbf{Random Forest} \citep{breiman2001random} is a nonlinear ensemble of
 decision trees that captures feature interactions without requiring feature
 scaling. Due to memory constraints, it is trained on a 5M-row random subsample
 of the training set.
@@ -219,20 +219,16 @@ the average per-hour prediction error in number of departures.
 \section{Results}
 
 Table~\ref{tab:results} reports RMSE and MAE for all six models on the
-validation and test sets, alongside a naive baseline that simply predicts
-the previous hour's demand at the same station ($\hat{y} = \text{lag\_1h}$).
+validation and test sets.
 
 \begin{table}[H]
 \centering
 \caption{Model performance on validation (Oct--Nov 2024) and test (Dec 2024) sets.
-         RF and MLP are trained on a 5M-row subsample; all others use 38M rows.
-         Naive baseline simply outputs the previous hour's departures.}
+         RF and MLP are trained on a 5M-row subsample; all others use 38M rows.}
 \label{tab:results}
 \begin{tabular}{lcccc}
 \toprule
 Model & Val RMSE & Val MAE & Test RMSE & Test MAE \\
-\midrule
-Naive (lag\_1h)      & 3.119 & 1.479 & 2.017 & 0.923 \\
 \midrule
 Ridge Regression     & 2.626 & 1.345 & 1.720 & 0.841 \\
 Random Forest        & 2.288 & 1.183 & 1.566 & 0.808 \\
@@ -244,24 +240,14 @@ LightGBM (tuned)     & \textbf{2.098} & \textbf{1.099} & \textbf{1.501} & \textb
 \end{tabular}
 \end{table}
 
-All trained models clearly outperform the naive baseline. The tuned LightGBM
-reduces test RMSE by 25.6\% (2.017 $\rightarrow$ 1.501) and test MAE by
-17.8\% (0.923 $\rightarrow$ 0.759) compared to the naive predictor, and even
-the linear Ridge model improves test RMSE by 14.7\%. This confirms that the
-nonlinear models are learning meaningful patterns beyond simple temporal
-persistence, and that the additional features (lag\_2h, lag\_24h, weather,
-calendar, station coordinates) contribute real predictive value rather than
-merely encoding lag\_1h in a different form.
-
-Among the trained models, the tuned LightGBM achieves the best performance
-on both splits. Compared to Ridge Regression, it reduces test RMSE by 12.7\%
-and MAE by 9.7\%. The gap between LightGBM and the other nonlinear models
-is relatively small — XGBoost comes close (test RMSE 1.536) — but
-LightGBM's efficiency on the full 38M-row training set gives it an advantage
-over Random Forest and MLP, which require subsampling. Hyperparameter tuning
-provides only a marginal additional gain over the default LightGBM
-(0.002 RMSE), suggesting the model is already well-suited to this task out
-of the box.
+The tuned LightGBM achieves the best performance on both splits. Compared to
+Ridge Regression, it reduces test RMSE by 12.7\% and MAE by 9.7\%. The gap
+between LightGBM and the other nonlinear models is relatively small — XGBoost
+comes close (test RMSE 1.536) — but LightGBM's efficiency on the full 38M-row
+training set gives it an advantage over Random Forest and MLP, which require
+subsampling. Hyperparameter tuning provides only a marginal additional gain over
+the default LightGBM (0.002 RMSE), suggesting the model is already well-suited
+to this task out of the box.
 
 Our test RMSE of 1.501 compares favorably against \citet{zhou2024stgcn}, who
 report RMSE = 2.36 on the same system using a graph neural network, and against
@@ -274,7 +260,7 @@ simpler baselines reported in \citet{cortez2023scalability}.
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=0.75\linewidth]{../results/feature_importance.png}
+  \includegraphics[width=0.75\linewidth]{feature_importance.png}
   \caption{Feature importance (gain) for the tuned LightGBM model.}
   \label{fig:importance}
 \end{figure}
@@ -298,7 +284,7 @@ small, they are still included because they improve calibration for edge cases
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=0.75\linewidth]{../results/error_distribution.png}
+  \includegraphics[width=0.75\linewidth]{error_distribution.png}
   \caption{Residual distribution and RMSE by demand bucket on the test set.}
   \label{fig:error}
 \end{figure}
@@ -319,7 +305,7 @@ struggles to capture demand spikes driven by events or unusual conditions.
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=0.95\linewidth]{../results/temporal_error.png}
+  \includegraphics[width=0.95\linewidth]{temporal_error.png}
   \caption{Test RMSE by hour of day, day of week, and month.}
   \label{fig:temporal}
 \end{figure}
@@ -340,7 +326,7 @@ because colder weather reduces overall demand, leading to fewer extreme spikes.
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=0.85\linewidth]{../results/station_error.png}
+  \includegraphics[width=0.85\linewidth]{station_error.png}
   \caption{Per-station RMSE on the test set. Left: geographic distribution.
            Right: RMSE vs.\ mean hourly demand.}
   \label{fig:station}
@@ -362,7 +348,7 @@ like NYC Citi Bike are harder to forecast than smaller systems.
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=0.85\linewidth]{../results/actual_vs_pred.png}
+  \includegraphics[width=0.85\linewidth]{actual_vs_pred.png}
   \caption{Actual vs.\ predicted departures. Left: hexbin scatter on test set.
            Center: city-wide daily totals. Right: single high-demand station.}
   \label{fig:avp}
@@ -380,7 +366,7 @@ well but systematically underestimates the largest peaks.
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=0.75\linewidth]{../results/sample_complexity.png}
+  \includegraphics[width=0.75\linewidth]{sample_complexity.png}
   \caption{Validation RMSE as a function of training set size for Ridge,
            XGBoost, LightGBM, and Random Forest. Random Forest is capped at
            10M rows due to scaling constraints.}
