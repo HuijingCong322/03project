@@ -33,21 +33,7 @@
 
 % ── Abstract ──────────────────────────────────────────────────────────────────
 \begin{abstract}
-Bike-sharing systems like NYC Citi Bike face persistent supply imbalances caused
-by uneven, time-varying demand across stations. We formulate hourly station-level
-departure count prediction as a regression problem and build a full machine
-learning pipeline over two years of Citi Bike trip records (January 2023 –
-December 2024), covering approximately 1,700 active stations and over 43 million
-station-hour observations. We compare six models — Ridge Regression, Random
-Forest, XGBoost, MLP, LightGBM, and a hyperparameter-tuned LightGBM — against
-a naive lag-1h baseline, and find that the tuned LightGBM achieves a test RMSE
-of \textbf{1.501} and MAE of \textbf{0.759} departures per hour, a 25.6\%
-RMSE improvement over the naive baseline. Analysis reveals that short-term
-lag features dominate predictive performance, PM rush hour is the hardest
-time to predict, high-error stations concentrate in high-demand Midtown
-Manhattan, and a sample-complexity study shows that all models saturate at
-roughly 10\% of the training data — indicating that feature expressiveness,
-not data volume, is the main bottleneck on this task.
+NYC Citi Bike, like other bike-sharing systems, often faces the problem of imbalanced demand across different stations and at different times.  In this project, we treat this as a regression task. To predict bike departures at each station in a given hour, we use two years of Citi Bike trip records, hourly weather data, and calendar data. We train six models, namely Ridge Regression, Random Forest, XGBoost, MLP, LightGBM, and hyperparameter-tuned LightGBM, and compare them with a lag-1h baseline. To better predict demand, we experimentally include the following elements in our project: short-term lag features, systematic hyperparameter tuning, and training with a multi-year trip dataset. The results show that the hyperparameter-tuned LightGBM has the best performance, with an RMSE of \textbf{1.501} and an MAE of \textbf{0.759}. It outperforms the simple lag-1h baseline by 25.6\% in RMSE and Ridge Regression by 12.7\% in RMSE. The results also suggest that better features, such as short-term lag features in this case, rather than sheer data volume, play a more important role in improving the accuracy of demand forecasting.
 \end{abstract}
 
 % ── 1. Introduction ───────────────────────────────────────────────────────────
