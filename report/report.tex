@@ -33,25 +33,15 @@
 
 % ── Abstract ──────────────────────────────────────────────────────────────────
 \begin{abstract}
-NYC Citi Bike, like other bike-sharing systems, often faces the problem of imbalanced demand across different stations and at different times.  In this project, we treat this as a regression task. To predict bike departures at each station in a given hour, we use two years of Citi Bike trip records, hourly weather data, and calendar data. We train six models, namely Ridge Regression, Random Forest, XGBoost, MLP, LightGBM, and hyperparameter-tuned LightGBM, and compare them with a lag-1h baseline. To better predict demand, we experimentally include the following elements in our project: short-term lag features, systematic hyperparameter tuning, and training with a multi-year trip dataset. The results show that the hyperparameter-tuned LightGBM has the best performance, with an RMSE of \textbf{1.501} and an MAE of \textbf{0.759}. It outperforms the simple lag-1h baseline by 25.6\% in RMSE and Ridge Regression by 12.7\% in RMSE. The results also suggest that better features, such as short-term lag features in this case, rather than sheer data volume, play a more important role in improving the accuracy of demand forecasting.
+NYC Citi Bike, like other bike-sharing systems, often faces the problem of imbalanced demand across different stations and at different times.  In this project, we model this as a regression task. To predict bike departures at each station in a given hour, we use two years of Citi Bike trip records, hourly weather data, and calendar data. We train six models, namely Ridge Regression, Random Forest, XGBoost, MLP, LightGBM, and hyperparameter-tuned LightGBM, and compare them with a lag-1h baseline. To better predict demand, we experimentally include the following elements in our project: short-term lag features, systematic hyperparameter tuning, and training with a multi-year trip dataset. The results show that the hyperparameter-tuned LightGBM has the best performance, with an RMSE of \textbf{1.501} and an MAE of \textbf{0.759}. It outperforms the simple lag-1h baseline by 25.6\% in RMSE and Ridge Regression by 12.7\% in RMSE. The results also suggest that better features, such as short-term lag features in this case, rather than sheer data volume, play a more important role in improving the accuracy of demand forecasting.
 \end{abstract}
 
 % ── 1. Introduction ───────────────────────────────────────────────────────────
 \section{Introduction}
 
-Citi Bike is the largest bike-sharing system in New York City, with stations
-spread across Manhattan, Brooklyn, Queens, and the Bronx. A core operational
-challenge is that demand is spatially and temporally uneven: some stations run
-out of bikes while others overflow, forcing costly manual rebalancing operations.
-Accurate short-term demand forecasts can help operators anticipate these
-imbalances and act proactively.
+In recent years, bike-sharing systems have become an increasingly important means of transportation for urban populations. Citi Bike is the largest bike-sharing system in New York City, with bike stations across Manhattan, Brooklyn, Queens, and the Bronx. However, a major challenge for Citi Bike is demand imbalance across different areas and at different times. This requires the manual operation of moving bikes between stations, which is both time-consuming and costly. Better demand prediction can alleviate this problem by allowing operators to redistribute bikes in advance. 
 
-In this work, we study whether station-level bike demand can be predicted using
-historical trip data combined with weather and calendar information. We
-formulate the task as a regression problem: given a station and a specific hour,
-predict the number of bike departures in that hour. We train and evaluate models
-on two full years of data and conduct detailed analyses to understand when and
-where predictions are most and least reliable.
+To address this challenge, we model it as a regression task. Using historical trip records together with weather and calendar information, our models predict how many bikes will depart from a given station during a given hour. We train and compare six models: Ridge Regression, Random Forest, XGBoost, MLP, LightGBM, and hyperparameter-tuned LightGBM. Through this comparison, we aim to improve the accuracy of demand forecasting and better understand demand patterns in the NYC bike-sharing system.
 
 % ── 2. Related Work ───────────────────────────────────────────────────────────
 \section{Related Work}
