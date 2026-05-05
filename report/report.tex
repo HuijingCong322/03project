@@ -39,11 +39,15 @@ departure count prediction as a regression problem and build a full machine
 learning pipeline over two years of Citi Bike trip records (January 2023 –
 December 2024), covering approximately 1,700 active stations and over 43 million
 station-hour observations. We compare six models — Ridge Regression, Random
-Forest, XGBoost, MLP, LightGBM, and a hyperparameter-tuned LightGBM — and find
-that the tuned LightGBM achieves a test RMSE of \textbf{1.501} and MAE of
-\textbf{0.759} departures per hour. Analysis reveals that short-term lag
-features dominate predictive performance, PM rush hour is the hardest time to
-predict, and high-error stations concentrate in high-demand Midtown Manhattan.
+Forest, XGBoost, MLP, LightGBM, and a hyperparameter-tuned LightGBM — against
+a naive lag-1h baseline, and find that the tuned LightGBM achieves a test RMSE
+of \textbf{1.501} and MAE of \textbf{0.759} departures per hour, a 25.6\%
+RMSE improvement over the naive baseline. Analysis reveals that short-term
+lag features dominate predictive performance, PM rush hour is the hardest
+time to predict, high-error stations concentrate in high-demand Midtown
+Manhattan, and a sample-complexity study shows that all models saturate at
+roughly 10\% of the training data — indicating that feature expressiveness,
+not data volume, is the main bottleneck on this task.
 \end{abstract}
 
 % ── 1. Introduction ───────────────────────────────────────────────────────────
@@ -278,7 +282,7 @@ simpler baselines reported in \citet{cortez2023scalability}.
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=0.75\linewidth]{feature_importance.png}
+  \includegraphics[width=0.75\linewidth]{../results/feature_importance.png}
   \caption{Feature importance (gain) for the tuned LightGBM model.}
   \label{fig:importance}
 \end{figure}
@@ -302,7 +306,7 @@ small, they are still included because they improve calibration for edge cases
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=0.75\linewidth]{error_distribution.png}
+  \includegraphics[width=0.75\linewidth]{../results/error_distribution.png}
   \caption{Residual distribution and RMSE by demand bucket on the test set.}
   \label{fig:error}
 \end{figure}
@@ -323,7 +327,7 @@ struggles to capture demand spikes driven by events or unusual conditions.
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=0.95\linewidth]{temporal_error.png}
+  \includegraphics[width=0.95\linewidth]{../results/temporal_error.png}
   \caption{Test RMSE by hour of day, day of week, and month.}
   \label{fig:temporal}
 \end{figure}
@@ -344,7 +348,7 @@ because colder weather reduces overall demand, leading to fewer extreme spikes.
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=0.85\linewidth]{station_error.png}
+  \includegraphics[width=0.85\linewidth]{../results/station_error.png}
   \caption{Per-station RMSE on the test set. Left: geographic distribution.
            Right: RMSE vs.\ mean hourly demand.}
   \label{fig:station}
@@ -366,7 +370,7 @@ like NYC Citi Bike are harder to forecast than smaller systems.
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=0.85\linewidth]{actual_vs_pred.png}
+  \includegraphics[width=0.85\linewidth]{../results/actual_vs_pred.png}
   \caption{Actual vs.\ predicted departures. Left: hexbin scatter on test set.
            Center: city-wide daily totals. Right: single high-demand station.}
   \label{fig:avp}
@@ -384,7 +388,7 @@ well but systematically underestimates the largest peaks.
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=0.75\linewidth]{sample_complexity.png}
+  \includegraphics[width=0.75\linewidth]{../results/sample_complexity.png}
   \caption{Validation RMSE as a function of training set size for Ridge,
            XGBoost, LightGBM, and Random Forest. Random Forest is capped at
            10M rows due to scaling constraints.}
