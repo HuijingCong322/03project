@@ -39,9 +39,9 @@ NYC Citi Bike, like other bike-sharing systems, often faces the problem of imbal
 % ── 1. Introduction ───────────────────────────────────────────────────────────
 \section{Introduction}
 
-In recent years, bike-sharing systems have become an increasingly important means of transportation for urban populations. Citi Bike is the largest bike-sharing system in New York City, with bike stations across Manhattan, Brooklyn, Queens, and the Bronx. However, a major challenge for Citi Bike is demand imbalance across different areas and at different times. This requires the manual operation of moving bikes between stations, which is both time-consuming and costly. Better demand prediction can alleviate this problem by allowing operators to redistribute bikes in advance. 
+In recent years, bike-sharing systems have become an increasingly important mode of transportation for urban populations. Citi Bike is the largest bike-sharing system in New York City, with bike stations across Manhattan, Brooklyn, Queens, and the Bronx. However, a major challenge for Citi Bike is demand imbalance across different areas and at different times. This requires the manual operation of moving bikes between stations, which is both time-consuming and costly. Better demand prediction can alleviate this problem by allowing operators to redistribute bikes in advance. 
 
-To address this challenge, we model it as a regression task. Using historical trip records together with weather and calendar information, our models predict how many bikes will depart from a given station during a given hour. We train and compare six models: Ridge Regression, Random Forest, XGBoost, MLP, LightGBM, and hyperparameter-tuned LightGBM. Through this comparison, we aim to improve the accuracy of demand forecasting and better understand demand patterns in the NYC bike-sharing system.
+To address this challenge, we model it as a regression task. Using historical trip records together with weather and calendar information, our models predict how many bikes will depart from a given station during a given hour. We train and compare six models: Ridge Regression, Random Forest, XGBoost, MLP, LightGBM, and hyperparameter-tuned LightGBM. Through this comparison, we aim to enhance prediction accuracy and better understand demand patterns in the NYC bike-sharing system.
 
 % ── 2. Related Work ───────────────────────────────────────────────────────────
 \section{Related Work}
@@ -96,30 +96,16 @@ systematic hyperparameter tuning. Our work fills this gap.
 
 \subsection{Sources}
 
-We use three data sources. The primary source is the \textbf{Citi Bike System
-Data}, a public dataset of individual trip records available from the Citi Bike
-S3 archive. Each record includes ride type, start and end timestamps, start and
-end station IDs, station coordinates, and rider type (member or casual). We use
-trip data from January 2023 through December 2024 and aggregate raw records into
-hourly departure counts per station, which serve as our prediction target.
+We use three data sources in our work. The first data source is the \textbf{Citi Bike trip history data} for the full years 2023 and 2024. The trip records include start time and date, stop time and date, start and end station IDs, and rider type, either member or casual. We process the raw trip records and aggregate them into hourly departure counts for each station. The hourly departure count for each station is our prediction target. 
 
-The second source is the \textbf{Open-Meteo Archive API}, which provides hourly
-historical weather observations from the Central Park station. We use
-temperature ($^\circ$F), precipitation (inches), snowfall (inches), and snow
-depth (inches). Although a single weather station cannot capture fine-grained
-local variation across the city, it captures major weather events that affect
-citywide ridership.
+The weather data are collected by querying the \textbf{Open-Meteo Archive API} for hourly weather observations from Central Park. We use temperature (fahrenheit), precipitation (inches), snowfall (inches), and snow depth (inches). Although a single weather station may not fully represent the local weather conditions across all stations, it can capture the major effects of weather on bike demand. 
 
-The third source is the Python \texttt{holidays} package, which provides a
-binary indicator for New York State federal holidays. Biking patterns on
-holidays differ noticeably from regular weekdays.
+We extract all New York State federal holidays from January 2023 to December 2024 using the Python \texttt{holidays} package. The holidays are encoded as a binary feature, which takes a value of 1 for all hours falling on that day.
 
 \subsection{Preprocessing and Feature Engineering}
 
-We aggregate raw trip records into a station $\times$ hour demand grid. Hours
-with zero departures are explicitly filled with zeros so that lag features can
-be computed correctly. The full grid covers 1,704 active stations and 17,520
-hourly time slots, producing approximately 43.6 million station-hour rows.
+We aggregate raw trip records into a station by hour demand grid. To make sure lag features can be computed correctly, we assign zero values to hours with no departures. The first 24 hours of each station's history are dropped because lag values are
+unavailable. The full grid covers 2,453 active stations and 17,520 hourly time slots, producing approximately 43 million station-hour rows.
 
 For each row, we construct the following features:
 
@@ -129,13 +115,9 @@ For each row, we construct the following features:
   \item \textbf{Station features:} latitude and longitude.
   \item \textbf{Weather features:} temperature, precipitation, snowfall,
         snow depth (all from the Central Park station).
-  \item \textbf{Lag features:} departures at the same station 1, 2, and 24
-        hours prior. These capture short-term autocorrelation and the
-        same-hour-yesterday pattern.
+  \item \textbf{Lag features:} departure count at the same station 1, 2, and 24
+        hours prior. These features help the model use recent data to predict current demand.
 \end{itemize}
-
-The first 24 hours of each station's history are dropped because lag values are
-unavailable, leaving approximately 43.6 million usable rows.
 
 \subsection{Train / Validation / Test Split}
 
@@ -153,8 +135,7 @@ Test & Dec 2024 & 1.85M \\
 \end{tabular}
 \end{center}
 
-This setup mirrors real-world deployment, where a model trained on historical
-data must generalize to future time periods.
+The time-based split, instead of a random split, better reflects real-world conditions, where a model is trained on historical data and evaluated on future time periods.
 
 % ── 4. Methods ────────────────────────────────────────────────────────────────
 \section{Methods}
