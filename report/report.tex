@@ -328,18 +328,20 @@ like NYC Citi Bike are harder to forecast than smaller systems.
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.85\linewidth]{../results/actual_vs_pred.png}
-  \caption{Actual vs.\ predicted departures. Left: hexbin scatter on test set.
-           Center: city-wide daily totals. Right: single high-demand station.}
+  \caption{Actual vs.\ predicted departures in three views. \textbf{Top-left:} hexbin density (log-scale) of all 1.85M
+           predictions.
+           \textbf{Top-right:} city-wide
+           daily total departures. \textbf{Bottom:} hourly predictions for the highest-error station
+           (W~21~St~\&~6~Ave, RMSE = 5.58).}
   \label{fig:avp}
 \end{figure}
 
-Figure~\ref{fig:avp} provides three complementary views of model fit. The
-hexbin scatter shows that predictions are tightly concentrated along the
-diagonal for low-demand hours, with increasing spread at higher values. The
-city-wide daily totals track closely with actual ridership across December,
-including the Christmas holiday dip (December 24--26). At the busiest station
-(W~21~St~\&~6~Ave, RMSE = 5.58), the model captures the daily demand cycle
-well but systematically underestimates the largest peaks.
+Figure~\ref{fig:avp} provides three views of model fit: overall prediction accuracy across the test set, city-wide demand over time, and single-station demand over time. \textbf{Top-left:} The
+hexbin scatter shows that low bike demands are easier to predict, while the high demand periods has more variability. \textbf{Top-right:} The
+plot shows that the model captures the general pattern of bike demands pretty well across December,
+including the Christmas holiday dip (December 24--26). But the model predictions are not as sharp as the actual demand. \textbf{Bottom:} At the busiest and highest-error station
+(W~21~St~\&~6~Ave, RMSE = 5.58), the model predictions follows the daily demand cycle
+well but tend to underestimate the largest peaks.
 
 \subsection{Sample Complexity}
 
