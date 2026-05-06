@@ -354,10 +354,10 @@ well but tend to underestimate the largest peaks.
   \label{fig:sample}
 \end{figure}
 
-To understand how each model's performance scales with data, we trained
+To understand "how much data do different methods need to perform well", we trained
 Ridge, XGBoost, LightGBM, and Random Forest on six fractions of the training
 set: 10\%, 20\%, 40\%, 60\%, 80\%, and 100\% (corresponding to roughly
-3.8M to 38.1M rows). The validation set is fixed at Oct--Nov 2024 across all
+3.8M to 38.1M rows). The validation set is Oct--Nov 2024 data across all
 runs. Table~\ref{tab:sample} reports validation RMSE at each fraction.
 
 \begin{table}[H]
@@ -377,26 +377,14 @@ Random Forest & 2.293 & 2.280 & 2.275 & 2.275 & 2.276 & 2.276 \\
 \end{tabular}
 \end{table}
 
-Three patterns emerge from Figure~\ref{fig:sample}. First, LightGBM's
-validation RMSE drops by only 0.034 as the training set grows tenfold,
-and the curve is essentially flat from 40\% onward. This indicates that
-3.8M rows already capture most of the learnable signal --- the remaining
-34M rows yield diminishing returns. Second, Ridge Regression actually
-\emph{degrades} slightly with more data (2.626 $\rightarrow$ 2.699). Because
-the regularization strength $\alpha=1$ is fixed, its relative effect weakens
-as the dataset grows; combined with the mild seasonal distribution shift
-between training (Jan 2023 -- Sep 2024) and validation (Oct -- Nov 2024),
-this leads to slightly worse generalization. Third, the model ranking
-LightGBM $>$ XGBoost $>$ Random Forest $>$ Ridge is stable across all
-fractions; additional data shrinks the gaps between models but never
-changes the ordering.
+As shown in Figure~\ref{fig:sample}, all nonlinear models saturate by 40\% of the training data, indicating additional data yield diminishing returns. Unexpectedly, Ridge Regression performs worse with more data. Two possible reasons are that the linear model is underfitting or there is a seasonal demand shift
+between training (Jan 2023 to Sep 2024) and validation (Oct and Nov 2024). Overall, the model ranking stays the same across all
+fractions:
+LightGBM $>$ XGBoost $>$ Random Forest $>$ Ridge.
 
-The most important takeaway is that the bottleneck on this task is
-\textbf{feature expressiveness, not data quantity}. All nonlinear models
-saturate well before the full training set is consumed. Future improvements
-are more likely to come from richer features --- weather lag/lead variables,
-station embeddings, or cluster-level aggregates --- than from collecting
-more data.
+We conclude that for this task, 
+feature quality and expressiveness is more important than data quantity. Future improvements
+are more likely to come from better features.
 
 % ── 7. Conclusion ─────────────────────────────────────────────────────────────
 \section{Conclusion}
