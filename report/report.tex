@@ -33,35 +33,15 @@
 
 % ── Abstract ──────────────────────────────────────────────────────────────────
 \begin{abstract}
-Bike-sharing systems like NYC Citi Bike face persistent supply imbalances caused
-by uneven, time-varying demand across stations. We formulate hourly station-level
-departure count prediction as a regression problem and build a full machine
-learning pipeline over two years of Citi Bike trip records (January 2023 –
-December 2024), covering approximately 1,700 active stations and over 43 million
-station-hour observations. We compare six models — Ridge Regression, Random
-Forest, XGBoost, MLP, LightGBM, and a hyperparameter-tuned LightGBM — and find
-that the tuned LightGBM achieves a test RMSE of \textbf{1.501} and MAE of
-\textbf{0.759} departures per hour. Analysis reveals that short-term lag
-features dominate predictive performance, PM rush hour is the hardest time to
-predict, and high-error stations concentrate in high-demand Midtown Manhattan.
+NYC Citi Bike, like other bike-sharing systems, often faces the problem of imbalanced demand across different stations and at different times.  In this project, we model this as a regression task. To predict bike departures at each station in a given hour, we use two years of Citi Bike trip records, hourly weather data, and calendar data. We train six models, namely Ridge Regression, Random Forest, XGBoost, MLP, LightGBM, and hyperparameter-tuned LightGBM, and compare them with a lag-1h baseline. To better predict demand, we experimentally include the following elements in our project: short-term lag features, systematic hyperparameter tuning, and training with a multi-year trip dataset. The results show that the hyperparameter-tuned LightGBM has the best performance, with an RMSE of \textbf{1.501} and an MAE of \textbf{0.759}. It outperforms the simple lag-1h baseline by 25.6\% in RMSE and Ridge Regression by 12.7\% in RMSE. The results also suggest that better features, such as short-term lag features in this case, rather than sheer data volume, play a more important role in improving the accuracy of demand forecasting.
 \end{abstract}
 
 % ── 1. Introduction ───────────────────────────────────────────────────────────
 \section{Introduction}
 
-Citi Bike is the largest bike-sharing system in New York City, with stations
-spread across Manhattan, Brooklyn, Queens, and the Bronx. A core operational
-challenge is that demand is spatially and temporally uneven: some stations run
-out of bikes while others overflow, forcing costly manual rebalancing operations.
-Accurate short-term demand forecasts can help operators anticipate these
-imbalances and act proactively.
+In recent years, bike-sharing systems have become an increasingly important mode of transportation for urban populations. Citi Bike is the largest bike-sharing system in New York City, with bike stations across Manhattan, Brooklyn, Queens, and the Bronx. However, a major challenge for Citi Bike is demand imbalance across different areas and at different times. This requires the manual operation of moving bikes between stations, which is both time-consuming and costly. Better demand prediction can alleviate this problem by allowing operators to redistribute bikes in advance. 
 
-In this work, we study whether station-level bike demand can be predicted using
-historical trip data combined with weather and calendar information. We
-formulate the task as a regression problem: given a station and a specific hour,
-predict the number of bike departures in that hour. We train and evaluate models
-on two full years of data and conduct detailed analyses to understand when and
-where predictions are most and least reliable.
+To address this challenge, we model it as a regression task. Using historical trip records together with weather and calendar information, our models predict how many bikes will depart from a given station during a given hour. We train and compare six models: Ridge Regression, Random Forest, XGBoost, MLP, LightGBM, and hyperparameter-tuned LightGBM. Through this comparison, we aim to enhance prediction accuracy and better understand demand patterns in the NYC bike-sharing system.
 
 % ── 2. Related Work ───────────────────────────────────────────────────────────
 \section{Related Work}
@@ -116,30 +96,16 @@ systematic hyperparameter tuning. Our work fills this gap.
 
 \subsection{Sources}
 
-We use three data sources. The primary source is the \textbf{Citi Bike System
-Data}, a public dataset of individual trip records available from the Citi Bike
-S3 archive. Each record includes ride type, start and end timestamps, start and
-end station IDs, station coordinates, and rider type (member or casual). We use
-trip data from January 2023 through December 2024 and aggregate raw records into
-hourly departure counts per station, which serve as our prediction target.
+We use three data sources in our work. The first data source is the \textbf{Citi Bike trip history data} for the full years 2023 and 2024. The trip records include start time and date, stop time and date, start and end station IDs, and rider type, either member or casual. We process the raw trip records and aggregate them into hourly departure counts for each station. The hourly departure count for each station is our prediction target. 
 
-The second source is the \textbf{Open-Meteo Archive API}, which provides hourly
-historical weather observations from the Central Park station. We use
-temperature ($^\circ$F), precipitation (inches), snowfall (inches), and snow
-depth (inches). Although a single weather station cannot capture fine-grained
-local variation across the city, it captures major weather events that affect
-citywide ridership.
+The weather data are collected by querying the \textbf{Open-Meteo Archive API} for hourly weather observations from Central Park. We use temperature (fahrenheit), precipitation (inches), snowfall (inches), and snow depth (inches). Although a single weather station may not fully represent the local weather conditions across all stations, it can capture the major effects of weather on bike demand. 
 
-The third source is the Python \texttt{holidays} package, which provides a
-binary indicator for New York State federal holidays. Biking patterns on
-holidays differ noticeably from regular weekdays.
+We extract all New York State federal holidays from January 2023 to December 2024 using the Python \texttt{holidays} package. The holidays are encoded as a binary feature, which takes a value of 1 for all hours falling on that day.
 
 \subsection{Preprocessing and Feature Engineering}
 
-We aggregate raw trip records into a station $\times$ hour demand grid. Hours
-with zero departures are explicitly filled with zeros so that lag features can
-be computed correctly. The full grid covers 1,704 active stations and 17,520
-hourly time slots, producing approximately 43.6 million station-hour rows.
+We aggregate raw trip records into a station by hour demand grid. To make sure lag features can be computed correctly, we assign zero values to hours with no departures. The first 24 hours of each station's history are dropped because lag values are
+unavailable. The full grid covers 2,453 active stations and 17,520 hourly time slots, producing approximately 43 million station-hour rows.
 
 For each row, we construct the following features:
 
@@ -149,13 +115,9 @@ For each row, we construct the following features:
   \item \textbf{Station features:} latitude and longitude.
   \item \textbf{Weather features:} temperature, precipitation, snowfall,
         snow depth (all from the Central Park station).
-  \item \textbf{Lag features:} departures at the same station 1, 2, and 24
-        hours prior. These capture short-term autocorrelation and the
-        same-hour-yesterday pattern.
+  \item \textbf{Lag features:} departure count at the same station 1, 2, and 24
+        hours prior. These features help the model use recent data to predict current demand.
 \end{itemize}
-
-The first 24 hours of each station's history are dropped because lag values are
-unavailable, leaving approximately 43.6 million usable rows.
 
 \subsection{Train / Validation / Test Split}
 
@@ -173,8 +135,7 @@ Test & Dec 2024 & 1.85M \\
 \end{tabular}
 \end{center}
 
-This setup mirrors real-world deployment, where a model trained on historical
-data must generalize to future time periods.
+The time-based split, instead of a random split, better reflects real-world conditions, where a model is trained on historical data and evaluated on future time periods.
 
 % ── 4. Methods ────────────────────────────────────────────────────────────────
 \section{Methods}
@@ -278,7 +239,7 @@ simpler baselines reported in \citet{cortez2023scalability}.
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=0.75\linewidth]{feature_importance.png}
+  \includegraphics[width=0.75\linewidth]{../results/feature_importance.png}
   \caption{Feature importance (gain) for the tuned LightGBM model.}
   \label{fig:importance}
 \end{figure}
@@ -302,7 +263,7 @@ small, they are still included because they improve calibration for edge cases
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=0.75\linewidth]{error_distribution.png}
+  \includegraphics[width=0.75\linewidth]{../results/error_distribution.png}
   \caption{Residual distribution and RMSE by demand bucket on the test set.}
   \label{fig:error}
 \end{figure}
@@ -323,7 +284,7 @@ struggles to capture demand spikes driven by events or unusual conditions.
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=0.95\linewidth]{temporal_error.png}
+  \includegraphics[width=0.95\linewidth]{../results/temporal_error.png}
   \caption{Test RMSE by hour of day, day of week, and month.}
   \label{fig:temporal}
 \end{figure}
@@ -344,7 +305,7 @@ because colder weather reduces overall demand, leading to fewer extreme spikes.
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=0.85\linewidth]{station_error.png}
+  \includegraphics[width=0.85\linewidth]{../results/station_error.png}
   \caption{Per-station RMSE on the test set. Left: geographic distribution.
            Right: RMSE vs.\ mean hourly demand.}
   \label{fig:station}
@@ -366,35 +327,37 @@ like NYC Citi Bike are harder to forecast than smaller systems.
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=0.85\linewidth]{actual_vs_pred.png}
-  \caption{Actual vs.\ predicted departures. Left: hexbin scatter on test set.
-           Center: city-wide daily totals. Right: single high-demand station.}
+  \includegraphics[width=0.85\linewidth]{../results/actual_vs_pred.png}
+  \caption{Actual vs.\ predicted departures in three views. \textbf{Top-left:} hexbin density (log-scale) of all 1.85M
+           predictions.
+           \textbf{Top-right:} city-wide
+           daily total departures. \textbf{Bottom:} hourly predictions for the highest-error station
+           (W~21~St~\&~6~Ave, RMSE = 5.58).}
   \label{fig:avp}
 \end{figure}
 
-Figure~\ref{fig:avp} provides three complementary views of model fit. The
-hexbin scatter shows that predictions are tightly concentrated along the
-diagonal for low-demand hours, with increasing spread at higher values. The
-city-wide daily totals track closely with actual ridership across December,
-including the Christmas holiday dip (December 24--26). At the busiest station
-(W~21~St~\&~6~Ave, RMSE = 5.58), the model captures the daily demand cycle
-well but systematically underestimates the largest peaks.
+Figure~\ref{fig:avp} provides three views of model fit: overall prediction accuracy across the test set, city-wide demand over time, and single-station demand over time. \textbf{Top-left:} The
+hexbin scatter shows that low bike demands are easier to predict, while the high demand periods has more variability. \textbf{Top-right:} The
+plot shows that the model captures the general pattern of bike demands pretty well across December,
+including the Christmas holiday dip (December 24--26). But the model predictions are not as sharp as the actual demand. \textbf{Bottom:} At the busiest and highest-error station
+(W~21~St~\&~6~Ave, RMSE = 5.58), the model predictions follows the daily demand cycle
+well but tend to underestimate the largest peaks.
 
 \subsection{Sample Complexity}
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=0.75\linewidth]{sample_complexity.png}
+  \includegraphics[width=0.75\linewidth]{../results/sample_complexity.png}
   \caption{Validation RMSE as a function of training set size for Ridge,
            XGBoost, LightGBM, and Random Forest. Random Forest is capped at
            10M rows due to scaling constraints.}
   \label{fig:sample}
 \end{figure}
 
-To understand how each model's performance scales with data, we trained
+To understand "how much data do different methods need to perform well", we trained
 Ridge, XGBoost, LightGBM, and Random Forest on six fractions of the training
 set: 10\%, 20\%, 40\%, 60\%, 80\%, and 100\% (corresponding to roughly
-3.8M to 38.1M rows). The validation set is fixed at Oct--Nov 2024 across all
+3.8M to 38.1M rows). The validation set is Oct and Nov 2024 data across all
 runs. Table~\ref{tab:sample} reports validation RMSE at each fraction.
 
 \begin{table}[H]
@@ -414,26 +377,14 @@ Random Forest & 2.293 & 2.280 & 2.275 & 2.275 & 2.276 & 2.276 \\
 \end{tabular}
 \end{table}
 
-Three patterns emerge from Figure~\ref{fig:sample}. First, LightGBM's
-validation RMSE drops by only 0.034 as the training set grows tenfold,
-and the curve is essentially flat from 40\% onward. This indicates that
-3.8M rows already capture most of the learnable signal --- the remaining
-34M rows yield diminishing returns. Second, Ridge Regression actually
-\emph{degrades} slightly with more data (2.626 $\rightarrow$ 2.699). Because
-the regularization strength $\alpha=1$ is fixed, its relative effect weakens
-as the dataset grows; combined with the mild seasonal distribution shift
-between training (Jan 2023 -- Sep 2024) and validation (Oct -- Nov 2024),
-this leads to slightly worse generalization. Third, the model ranking
-LightGBM $>$ XGBoost $>$ Random Forest $>$ Ridge is stable across all
-fractions; additional data shrinks the gaps between models but never
-changes the ordering.
+As shown in Figure~\ref{fig:sample}, all nonlinear models saturate by 40\% of the training data, indicating additional data yield diminishing returns. Unexpectedly, Ridge Regression performs worse with more data. Two possible reasons are that the linear model is underfitting or there is a seasonal demand shift
+between training (Jan 2023 to Sep 2024) and validation (Oct and Nov 2024). Overall, the model ranking stays the same across all
+fractions:
+LightGBM $>$ XGBoost $>$ Random Forest $>$ Ridge.
 
-The most important takeaway is that the bottleneck on this task is
-\textbf{feature expressiveness, not data quantity}. All nonlinear models
-saturate well before the full training set is consumed. Future improvements
-are more likely to come from richer features --- weather lag/lead variables,
-station embeddings, or cluster-level aggregates --- than from collecting
-more data.
+We conclude that for this task, 
+feature quality and expressiveness is more important than data quantity. Future improvements
+are more likely to come from better features.
 
 % ── 7. Conclusion ─────────────────────────────────────────────────────────────
 \section{Conclusion}
